@@ -1,0 +1,132 @@
+{
+  "name": "kairos-vscode-debugger",
+  "displayName": "Kairos VS Code Debugger",
+  "description": "Official VS Code support for Kairos with DAP debugging, reverse execution controls, and built-in language features.",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicologiuliani6/kairos-vscode-debugger"
+  },
+  "publisher": "nico",
+  "homepage": "https://github.com/nicologiuliani6/kairos-vscode-debugger",
+  "bugs": {
+    "url": "https://github.com/nicologiuliani6/kairos-vscode-debugger/issues"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Debuggers", "Programming Languages"],
+  "keywords": [
+    "kairos",
+    "debugger",
+    "dap",
+    "reverse-debugging",
+    "vscode",
+    "language-support"
+  ],
+  "activationEvents": [
+    "onDebugResolve:kairos",
+    "onLanguage:kairos"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "kairos",
+        "extensions": [".kairos"],
+        "aliases": ["Kairos"]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kairos",
+        "scopeName": "source.kairos",
+        "path": "./syntaxes/kairos.tmLanguage.json"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "kairos"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "kairos",
+        "label": "Kairos Debug",
+        "languages": ["kairos"],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "File .kairos da eseguire"
+              },
+              "kairosApp": {
+                "type": "string",
+                "description": "Percorso dell'eseguibile KairosApp"
+              },
+              "kairosLib": {
+                "type": "string",
+                "description": "Percorso di libvm_dap.so"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        }
+      }
+    ],
+    "configuration": {
+      "title": "Kairos",
+      "properties": {
+        "kairos.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Percorso dell'interprete Python."
+        },
+        "kairos.projectRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Percorso della root del progetto Kairos."
+        },
+        "kairos.appPath": {
+          "type": "string",
+          "default": "",
+          "description": "Percorso di KairosApp. Se impostato, ha priorita rispetto a kairos.projectRoot."
+        },
+        "kairos.libPath": {
+          "type": "string",
+          "default": "",
+          "description": "Percorso di libvm_dap.so (es. /home/user/kairos/build/libvm_dap.so)"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "kairos.selectInterpreter",
+        "title": "Kairos: Seleziona interprete Python"
+      },
+      {
+        "command": "kairos.selectRoot",
+        "title": "Kairos: Seleziona root progetto"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "koffi": "^2.0.0",
+    "@vscode/debugadapter": "^1.61.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@types/vscode": "^1.80.0",
+    "@vscode/debugprotocol": "^1.61.0",
+    "typescript": "^5.0.0"
+  }
+}
