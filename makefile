@@ -3,7 +3,9 @@
 # ============================================================
 
 VSCE        := $(shell npm bin)/vsce
-EXT_NAME    := kairos-debugger
+EXT_NAME    := $(shell node -p "require('./package.json').name")
+PUBLISHER   := $(shell node -p "require('./package.json').publisher")
+EXT_ID      := $(PUBLISHER).$(EXT_NAME)
 VERSION     := $(shell node -p "require('./package.json').version")
 VSIX        := $(EXT_NAME)-$(VERSION).vsix
 
@@ -48,8 +50,8 @@ install: package
 #  uninstall — disinstalla l'estensione
 # ============================================================
 uninstall:
-	@echo "Disinstallazione $(EXT_NAME)..."
-	code --uninstall-extension $(EXT_NAME) || true
+	@echo "Disinstallazione $(EXT_ID)..."
+	code --uninstall-extension $(EXT_ID) || true
 	@echo "Disinstallazione OK"
 
 # ============================================================

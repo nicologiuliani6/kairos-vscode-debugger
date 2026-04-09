@@ -151,6 +151,7 @@ class KairosDebugConfigurationProvider
 
     private appCandidatesFromRoot(root: string): string[] {
         return [
+            path.join(root, 'packaging', 'linux', 'kairosapp'),
             path.join(root, 'build', 'dist', 'KairosApp'),
             path.join(root, 'build', 'KairosApp'),
             path.join(root, 'dist', 'KairosApp'),
@@ -166,6 +167,19 @@ class KairosDebugConfigurationProvider
             path.join(root, 'dist', 'libvm_dap.so'),
             path.join(root, 'lib', 'libvm_dap.so'),
             path.join(root, 'libvm_dap.so'),
+        ];
+    }
+
+    private appGlobalCandidates(): string[] {
+        return [
+            '/usr/local/bin/kairosapp',
+            '/opt/kairosapp/KairosApp',
+        ];
+    }
+
+    private libGlobalCandidates(): string[] {
+        return [
+            '/usr/local/lib/kairosapp/dap.so',
         ];
     }
 
@@ -232,25 +246,40 @@ class KairosDebugConfigurationProvider
         }
 
         const detectedRoot = configuredRoot || this.detectProjectRoot(activeFile) || '';
-        const detectedApp = detectedRoot ? this.firstExisting(this.appCandidatesFromRoot(detectedRoot)) : undefined;
-        const detectedLib = detectedRoot ? this.firstExisting(this.libCandidatesFromRoot(detectedRoot)) : undefined;
+        const appSearchCandidates = [
+            ...(detectedRoot ? this.appCandidatesFromRoot(detectedRoot) : []),
+            ...this.appGlobalCandidates(),
+        ];
+        const libSearchCandidates = [
+            ...(detectedRoot ? this.libCandidatesFromRoot(detectedRoot) : []),
+            ...this.libGlobalCandidates(),
+        ];
+        const detectedApp = this.firstExisting(appSearchCandidates);
+        const detectedLib = this.firstExisting(libSearchCandidates);
+        const configuredAppValid = configuredApp && this.fileExists(configuredApp) ? configuredApp : '';
+        const configuredLibValid = configuredLib && this.fileExists(configuredLib) ? configuredLib : '';
 
         // Fallback automatico da settings/autodetect.
-        if (!config.kairosApp && configuredApp) {
-            config.kairosApp = configuredApp;
+        if ((!config.kairosApp || !this.fileExists(config.kairosApp)) && configuredAppValid) {
+            config.kairosApp = configuredAppValid;
         } else if (!config.kairosApp && detectedApp) {
             config.kairosApp = detectedApp;
+        } else if (config.kairosApp && !this.fileExists(config.kairosApp) && detectedApp) {
+            config.kairosApp = detectedApp;
         }
-        if (!config.kairosLib && configuredLib) {
-            config.kairosLib = configuredLib;
+        if ((!config.kairosLib || !this.fileExists(config.kairosLib)) && configuredLibValid) {
+            config.kairosLib = configuredLibValid;
         } else if (!config.kairosLib && detectedLib) {
+            config.kairosLib = detectedLib;
+        } else if (config.kairosLib && !this.fileExists(config.kairosLib) && detectedLib) {
             config.kairosLib = detectedLib;
         }
 
         // L'adapter richiede sempre kairosApp.
         if (!config.kairosApp || !this.fileExists(config.kairosApp)) {
             vscode.window.showErrorMessage(
-                'Kairos: non trovo KairosApp. Usa "Kairos: Seleziona root progetto" o imposta "kairosApp" in launch.json.'
+                `Kairos (v0.1.1): non trovo KairosApp. Risolto="${config.kairosApp || ''}". ` +
+                `Candidati=${appSearchCandidates.join(' | ')}`
             );
             return undefined;
         }
