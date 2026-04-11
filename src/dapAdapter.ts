@@ -25,6 +25,9 @@ import { Worker } from 'worker_threads';
 
 const logFile = '/tmp/kairos-dap.log';
 
+/** Se true, logga ogni chunk pipe (lento: sync I/O → riempie la pipe da sola). */
+const LOG_PIPE_CHUNKS = process.env.KAIROS_DAP_LOG_PIPE === '1';
+
 function log(msg: string) {
     fs.appendFileSync(logFile, new Date().toISOString() + ' ' + msg + '\n');
 }
@@ -193,7 +196,9 @@ class PipeReader {
 
             sock.on('data', (chunk: string) => {
                 socketOk = true;
-                log(`pipe[socket] data: ${JSON.stringify(chunk)}`);
+                if (LOG_PIPE_CHUNKS) {
+                    log(`pipe[socket] data: ${JSON.stringify(chunk)}`);
+                }
                 this.onData(chunk);
             });
 
@@ -225,7 +230,7 @@ class PipeReader {
         this.interval = setInterval(() => {
             if (inFlight) return;
             inFlight = true;
-            const buf = Buffer.alloc(4096);
+            const buf = Buffer.alloc(65536);
             fs.read(this.fd, buf, 0, buf.length, null, (err, bytesRead, b) => {
                 inFlight = false;
                 if (err) {
@@ -234,11 +239,13 @@ class PipeReader {
                 }
                 if (bytesRead > 0) {
                     const text = b.toString('utf-8', 0, bytesRead);
-                    log(`pipe[poll] data: ${JSON.stringify(text)}`);
+                    if (LOG_PIPE_CHUNKS) {
+                        log(`pipe[poll] data: ${JSON.stringify(text)}`);
+                    }
                     this.onData(text);
                 }
             });
-        }, 50);
+        }, 16);
     }
 
     stop() {
@@ -273,6 +280,7 @@ class KairosDebugSession extends LoggingDebugSession {
     private autoContinuePending = false;
     private breakpoints = new Set<number>();
     private terminationTimer: NodeJS.Timeout | null = null;
+    private pipeHasEmittedOutput: boolean = false;
 
     constructor() {
         super();
@@ -306,6 +314,7 @@ class KairosDebugSession extends LoggingDebugSession {
         if (fd < 0) return;
 
         this.pipeReader = new PipeReader(fd, (text) => {
+            this.pipeHasEmittedOutput = true;
             // 'console' e' visualizzato in modo piu' affidabile in Debug Console.
             this.sendOutput(text, 'console');
         });
@@ -331,7 +340,7 @@ class KairosDebugSession extends LoggingDebugSession {
     // Flush sincrono del buffer VM (fallback anti-race a fine esecuzione).
     private flushVmOutputBuffer(): number {
         if (!this.dbg) return 0;
-        const buf = Buffer.alloc(65536);
+        const buf = Buffer.alloc(1024 * 1024);
         let emitted = 0;
         for (;;) {
             let n = 0;
@@ -367,7 +376,7 @@ class KairosDebugSession extends LoggingDebugSession {
 
         for (let i = 0; i < attempts; i++) {
             const text = await new Promise<string>((resolve) => {
-                const buf = Buffer.alloc(4096);
+                const buf = Buffer.alloc(65536);
                 fs.read(fd, buf, 0, buf.length, null, (err, bytesRead, b) => {
                     if (err || bytesRead <= 0) return resolve('');
                     resolve(b.toString('utf-8', 0, bytesRead));
@@ -431,6 +440,7 @@ class KairosDebugSession extends LoggingDebugSession {
             this.dbgPtr = BigInt(this.dbg);
         }
 
+        this.pipeHasEmittedOutput = false;
         vm_debug_start(bytecode, this.dbg);
         this.startOutputPipe();
         this.sendResponse(response);
@@ -494,21 +504,24 @@ class KairosDebugSession extends LoggingDebugSession {
             .then((line) => {
                 log(`_doContinue: line=${line}`);
                 if (line < 0) {
-                    log('VM terminata');
-                    const firstFlush = this.flushVmOutputBuffer();
-                    // In VS Code, dopo stepBack/rebuild possono arrivare ultimi chunk
-                    // dalla pipe con leggero ritardo. Rimandiamo di poco il terminate.
-                    this.clearTerminationTimer();
-                    this.terminationTimer = setTimeout(() => {
-                        (async () => {
-                            this.terminationTimer = null;
-                            const secondFlush = this.flushVmOutputBuffer();
-                            await this.flushPipeFdBestEffort();
-                            const thirdFlush = this.flushVmOutputBuffer();
-                            if ((firstFlush + secondFlush + thirdFlush) === 0) {
-                                this.emitFallbackFinalDump();
-                            }
-                            this.sendEvent(new TerminatedEvent());
+                log('VM terminata');
+                this.stopOutputPipe();
+
+                // FIX: se la pipe ha già consegnato output, non flusare out_buf
+                // per evitare duplicati — out_buf contiene gli stessi dati della pipe.
+                const firstFlush  = this.pipeHasEmittedOutput ? 0 : this.flushVmOutputBuffer();
+                this.clearTerminationTimer();
+                this.terminationTimer = setTimeout(() => {
+                    (async () => {
+                        this.terminationTimer = null;
+                        const secondFlush = this.pipeHasEmittedOutput ? 0 : this.flushVmOutputBuffer();
+                        await this.flushPipeFdBestEffort();
+                        const thirdFlush  = this.pipeHasEmittedOutput ? 0 : this.flushVmOutputBuffer();
+                        if (!this.pipeHasEmittedOutput &&
+                            (firstFlush + secondFlush + thirdFlush) === 0) {
+                            this.emitFallbackFinalDump();
+                        }
+                        this.sendEvent(new TerminatedEvent());
                         })().catch((e: any) => {
                             log(`flushPipeFdBestEffort error: ${e?.message || e}`);
                             this.sendEvent(new TerminatedEvent());
@@ -573,6 +586,7 @@ class KairosDebugSession extends LoggingDebugSession {
             return;
         }
         // step_back ricostruisce la VM internamente: la pipe di output cambia.
+        this.pipeHasEmittedOutput = false;
         this.stopOutputPipe();
         this.startOutputPipe();
         this.sendResponse(response);
@@ -598,6 +612,7 @@ class KairosDebugSession extends LoggingDebugSession {
         }
 
         // reverseContinue usa la stessa rebuild: riaggancia output pipe.
+        this.pipeHasEmittedOutput = false;
         this.stopOutputPipe();
         this.startOutputPipe();
         this.sendEvent(new InvalidatedEvent(['variables', 'registers']));
