@@ -333,7 +333,9 @@ class KairosDebugSession extends LoggingDebugSession {
     }
 
     private emitStopped(reason: string) {
-        this.flushVmOutputBuffer();
+        // Evita duplicati: in DAP_MODE la VM può esporre lo stesso output sia via pipe
+        // che via out_buf. Preferiamo SEMPRE la pipe; out_buf viene usato solo come
+        // fallback a fine esecuzione se la pipe non ha consegnato nulla.
         this.sendEvent(new StoppedEvent(reason, 1));
     }
 
@@ -353,6 +355,7 @@ class KairosDebugSession extends LoggingDebugSession {
             this.sendOutput(buf.toString('utf-8', 0, n), 'console');
             emitted += n;
         }
+        if (emitted > 0) this.pipeHasEmittedOutput = true;
         return emitted;
     }
 
@@ -384,6 +387,7 @@ class KairosDebugSession extends LoggingDebugSession {
             });
             if (text) {
                 log(`pipe[flush] data: ${JSON.stringify(text)}`);
+                this.pipeHasEmittedOutput = true;
                 this.sendOutput(text, 'console');
             }
             await new Promise((r) => setTimeout(r, delayMs));
