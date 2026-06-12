@@ -3,6 +3,7 @@
   "displayName": "Kairos VS Code Debugger",
   "description": "Official VS Code support for Kairos with DAP debugging, reverse execution controls, and built-in language features.",
   "version": "0.1.1",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/nicologiuliani6/kairos-vscode-debugger"
