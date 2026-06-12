@@ -7,6 +7,10 @@
       "match": "//.*$"
     },
     {
+      "name": "keyword.control.exception.kairos",
+      "match": "\\b(?:try|rollback|yrt)\\b"
+    },
+    {
       "name": "keyword.control.kairos",
       "match": "\\b(?:if|then|else|fi|from|loop|until|call|uncall|local|delocal|par|and|rap)\\b"
     },
