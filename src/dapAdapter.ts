@@ -701,13 +701,25 @@ class KairosDebugSession extends LoggingDebugSession {
         this.sendResponse(response);
     }
 
+    /* ── Helper: JSON dalla VM, di qualunque lunghezza ──
+       La VM restituisce la lunghezza completa del JSON, come snprintf: se non
+       entrava nel buffer si riprova con uno della misura giusta, invece di
+       leggere un JSON troncato. */
+    private readJson(fn: (dbg: any, out: Buffer, sz: number) => number): string {
+        let buf = Buffer.alloc(65536);
+        const n = fn(this.dbg, buf, buf.length);
+        if (n >= buf.length) {
+            buf = Buffer.alloc(n + 1);
+            fn(this.dbg, buf, buf.length);
+        }
+        return buf.toString('utf-8').replace(/\0.*$/, '');
+    }
+
     /* ── Helper: stato corrente ── */
     private getState(): { line: number; frame: string } {
         if (!this.dbg) return { line: 0, frame: 'main' };
-        const buf = Buffer.alloc(65536);
-        vm_debug_dump_json_ext(this.dbg, buf, buf.length);
         try {
-            const json = JSON.parse(buf.toString('utf-8').replace(/\0.*$/, ''));
+            const json = JSON.parse(this.readJson(vm_debug_dump_json_ext));
             return { line: json.line, frame: json.frame };
         } catch {
             return { line: 0, frame: 'main' };
@@ -717,10 +729,8 @@ class KairosDebugSession extends LoggingDebugSession {
     /* ── Helper: variabili ── */
     private getVariables(): any[] {
         if (!this.dbg) return [];
-        const buf = Buffer.alloc(65536);
-        vm_debug_vars_json_ext(this.dbg, buf, buf.length);
         try {
-            return JSON.parse(buf.toString('utf-8').replace(/\0.*$/, ''));
+            return JSON.parse(this.readJson(vm_debug_vars_json_ext));
         } catch {
             return [];
         }
