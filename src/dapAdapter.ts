@@ -57,6 +57,7 @@ let vm_debug_vars_json_ext:         (dbg: any, out: Buffer, sz: number)   => num
 let vm_debug_dump_json_ext:         (dbg: any, out: Buffer, sz: number)   => number;
 let vm_debug_get_output_fd:         (dbg: any)                            => number;
 let vm_debug_output_ext:            (dbg: any, out: Buffer, sz: number)   => number;
+let vm_debug_error_ext:             (dbg: any, out: Buffer, sz: number)   => number;
 
 function loadLib() {
     log('Carico libvm_dap.so da: ' + LIB_PATH);
@@ -84,6 +85,7 @@ function loadLib() {
         vm_debug_dump_json_ext         = lib.func('int   vm_debug_dump_json_ext(void*, void*, int)');
         vm_debug_get_output_fd         = lib.func('int   vm_debug_get_output_fd(void*)');
         vm_debug_output_ext            = lib.func('int   vm_debug_output_ext(void*, void*, int)');
+        vm_debug_error_ext             = lib.func('int   vm_debug_error_ext(void*, void*, int)');
         log('Funzioni caricate OK');
     } catch (e: any) {
         log('ERRORE func binding: ' + e.message);
@@ -371,7 +373,7 @@ class KairosDebugSession extends LoggingDebugSession {
         this.sendOutput(`${lines.join('\n')}\n`, 'console');
     }
 
-    // Drain best-effort direttamente dal fd pipe (utile dopo stepBack/rebuild).
+    // Drain best-effort direttamente dal fd pipe (utile dopo uno step o uno stepBack).
     private async flushPipeFdBestEffort(attempts: number = 6, delayMs: number = 40) {
         if (!this.dbg) return;
         const fd = vm_debug_get_output_fd(this.dbg);
@@ -574,6 +576,12 @@ class KairosDebugSession extends LoggingDebugSession {
         }
     }
 
+    private reportStepBackRefusal() {
+        const buf = Buffer.alloc(1024);
+        const n = vm_debug_error_ext(this.dbg, buf, buf.length);
+        if (n > 0) this.sendOutput(buf.toString('utf-8', 0, n) + '\n', 'console');
+    }
+
     /* ── StepBack ── */
     protected stepBackRequest(
         response: DebugProtocol.StepBackResponse,
@@ -589,10 +597,9 @@ class KairosDebugSession extends LoggingDebugSession {
             this.sendOutput(`CRASH step_back: ${e.message}`, 'stderr');
             return;
         }
-        // step_back ricostruisce la VM internamente: la pipe di output cambia.
-        this.pipeHasEmittedOutput = false;
-        this.stopOutputPipe();
-        this.startOutputPipe();
+        // L'interprete ha eseguito l'inversa dell'istruzione precedente; se il
+        // passo non era possibile resta fermo e ne spiega il motivo.
+        this.reportStepBackRefusal();
         this.sendResponse(response);
         this.sendEvent(new InvalidatedEvent(['variables', 'registers']));
         this.sendEvent(new InvalidatedEvent(['stacks']));
@@ -615,10 +622,7 @@ class KairosDebugSession extends LoggingDebugSession {
             return;
         }
 
-        // reverseContinue usa la stessa rebuild: riaggancia output pipe.
-        this.pipeHasEmittedOutput = false;
-        this.stopOutputPipe();
-        this.startOutputPipe();
+        this.reportStepBackRefusal();
         this.sendEvent(new InvalidatedEvent(['variables', 'registers']));
         this.sendEvent(new InvalidatedEvent(['stacks']));
         this.emitStopped('step');
