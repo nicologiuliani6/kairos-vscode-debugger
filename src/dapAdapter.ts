@@ -414,7 +414,7 @@ class KairosDebugSession extends LoggingDebugSession {
         try {
             loadLib();
         } catch (e: any) {
-            this.sendErrorResponse(response, 1, `Impossibile caricare libvm_dap.so: ${e.message}`);
+            this.sendErrorResponse(response, 1, `Cannot load the debugger library (dap.so): ${e.message}`);
             return;
         }
 
@@ -425,13 +425,13 @@ class KairosDebugSession extends LoggingDebugSession {
         try {
             const appPath = args.kairosApp || '';
             if (!appPath) {
-                this.sendErrorResponse(response, 1, 'kairosApp non impostato nel launch.json');
+                this.sendErrorResponse(response, 1, 'kairosApp is not set in launch.json');
                 return;
             }
             ({ bytecode, compileOutput } = compileBytecode(this.sourceFile, appPath));
         } catch (e: any) {
             this.sendOutput(`Errore di compilazione:\n${e.message}`, 'stderr');
-            this.sendErrorResponse(response, 1, `Compilazione fallita: ${e.message}`);
+            this.sendErrorResponse(response, 1, `Compilation failed: ${e.message}`);
             return;
         }
 

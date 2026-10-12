@@ -17,10 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
 
             const choice = await vscode.window.showQuickPick(
                 [
-                    { label: '$(folder) Scegli file...', id: 'browse' },
-                    { label: '$(close) Usa default (venv automatico)', id: 'default' },
+                    { label: '$(folder) Choose file...', id: 'browse' },
+                    { label: '$(close) Use default (automatic venv)', id: 'default' },
                 ],
-                { placeHolder: `Interprete attuale: ${current || 'default'}` }
+                { placeHolder: `Current interpreter: ${current || 'default'}` }
             );
 
             if (!choice) return;
@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
                 await vscode.workspace
                     .getConfiguration('kairos')
                     .update('pythonPath', '', vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage('Kairos: interprete reimpostato al default.');
+                vscode.window.showInformationMessage('Kairos: interpreter reset to default.');
                 return;
             }
 
@@ -37,8 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
                 canSelectFiles:    true,
                 canSelectFolders:  false,
                 canSelectMany:     false,
-                openLabel:         'Seleziona interprete Python',
-                filters: { 'Eseguibili': ['', 'exe'], 'Tutti i file': ['*'] },
+                openLabel:         'Select Python interpreter',
+                filters: { 'Executables': ['', 'exe'], 'All files': ['*'] },
             });
 
             if (!uris || uris.length === 0) return;
@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
                 .getConfiguration('kairos')
                 .update('pythonPath', chosen, vscode.ConfigurationTarget.Global);
 
-            vscode.window.showInformationMessage(`Kairos: interprete impostato su ${chosen}`);
+            vscode.window.showInformationMessage(`Kairos: interpreter set to ${chosen}`);
         }
     );
 
@@ -64,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
                 canSelectFiles: false,
                 canSelectFolders: true,
                 canSelectMany: false,
-                openLabel: 'Seleziona root progetto Kairos',
+                openLabel: 'Select Kairos project root',
             });
 
             if (!uris || uris.length === 0) return;
@@ -75,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
                 .update('projectRoot', chosen, vscode.ConfigurationTarget.Global);
 
             if (chosen !== current) {
-                vscode.window.showInformationMessage(`Kairos: projectRoot impostato su ${chosen}`);
+                vscode.window.showInformationMessage(`Kairos: projectRoot set to ${chosen}`);
             }
         }
     );
@@ -236,13 +236,13 @@ class KairosDebugConfigurationProvider
         if (!config.type && !config.request && !config.name) {
             if (!activeFile || activeLang !== 'kairos') {
                 vscode.window.showErrorMessage(
-                    'Kairos: apri un file .kairos prima di avviare il debug senza launch.json.'
+                    'Kairos: open a .kairos file before debugging without a launch.json.'
                 );
                 return undefined;
             }
 
             config.type = 'kairos';
-            config.name = 'Kairos: Debug file corrente';
+            config.name = 'Kairos: Debug current file';
             config.request = 'launch';
             config.program = activeFile;
         }
@@ -284,8 +284,8 @@ class KairosDebugConfigurationProvider
         // L'adapter richiede sempre kairosApp.
         if (!config.kairosApp || !this.fileExists(config.kairosApp)) {
             vscode.window.showErrorMessage(
-                `Kairos (v0.2.1): non trovo kairos. Risolto="${config.kairosApp || ''}". ` +
-                `Candidati=${appSearchCandidates.join(' | ')}`
+                `Kairos: kairos executable not found (resolved "${config.kairosApp || ''}"; tried ${appSearchCandidates.join(' | ')}). ` +
+                `Install it with: curl -fsSL https://github.com/nicologiuliani6/kairos/releases/latest/download/install.sh | bash`
             );
             return undefined;
         }

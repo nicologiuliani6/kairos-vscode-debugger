@@ -2,7 +2,7 @@
   "name": "kairos-vscode-debugger",
   "displayName": "Kairos VS Code Debugger",
   "description": "Official VS Code support for Kairos with DAP debugging, reverse execution controls, and built-in language features.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -61,15 +61,15 @@
             "properties": {
               "program": {
                 "type": "string",
-                "description": "File .kairos da eseguire"
+                "description": "The .kairos file to run"
               },
               "kairosApp": {
                 "type": "string",
-                "description": "Percorso dell'eseguibile kairos"
+                "description": "Path of the kairos executable"
               },
               "kairosLib": {
                 "type": "string",
-                "description": "Percorso di libvm_dap.so"
+                "description": "Path of the debugger library dap.so (libvm_dap.so)"
               },
               "stopOnEntry": {
                 "type": "boolean",
@@ -86,33 +86,33 @@
         "kairos.pythonPath": {
           "type": "string",
           "default": "",
-          "description": "Percorso dell'interprete Python."
+          "description": "Python interpreter (only to run Kairos from a source checkout)."
         },
         "kairos.projectRoot": {
           "type": "string",
           "default": "",
-          "description": "Percorso della root del progetto Kairos."
+          "description": "Root of a Kairos source checkout (only when not using the installed kairos package)."
         },
         "kairos.appPath": {
           "type": "string",
           "default": "/usr/local/bin/kairos",
-          "description": "Percorso dell'eseguibile kairos. Se impostato, ha priorita rispetto a kairos.projectRoot."
+          "description": "Path of the kairos executable. When set, it takes priority over kairos.projectRoot."
         },
         "kairos.libPath": {
           "type": "string",
           "default": "/usr/local/lib/kairos/dap.so",
-          "description": "Percorso di libvm_dap.so (es. /home/user/kairos/build/libvm_dap.so)"
+          "description": "Path of the debugger library (dap.so, or build/libvm_dap.so in a source checkout)."
         }
       }
     },
     "commands": [
       {
         "command": "kairos.selectInterpreter",
-        "title": "Kairos: Seleziona interprete Python"
+        "title": "Kairos: Select Python interpreter"
       },
       {
         "command": "kairos.selectRoot",
-        "title": "Kairos: Seleziona root progetto"
+        "title": "Kairos: Select project root"
       }
     ]
   },

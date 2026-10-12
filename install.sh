@@ -9,7 +9,8 @@
 #   ./install.sh ./file.vsix     # un .vsix gia' scaricato
 #
 # Va eseguito dall'utente, non con sudo: le estensioni stanno nel profilo
-# dell'utente (~/.vscode/extensions).
+# dell'utente (~/.vscode/extensions). Se Kairos non e' installato, lo installa
+# (questo passo chiede la password di sudo).
 set -euo pipefail
 
 REPO="nicologiuliani6/kairos-vscode-debugger"
@@ -23,6 +24,13 @@ EDITORS=()
 for c in code codium cursor; do command -v "$c" >/dev/null 2>&1 && EDITORS+=("$c"); done
 if [[ ${#EDITORS[@]} -eq 0 ]]; then
   echo "Non trovo la CLI di VS Code (code), VSCodium (codium) o Cursor (cursor) nel PATH."; exit 1
+fi
+
+# Il debugger usa l'app kairos e la sua libreria dap.so: se mancano installa
+# il pacchetto kairos (chiede la password di sudo solo per questo).
+if [[ ! -f /usr/local/lib/kairos/dap.so ]] || ! command -v kairos >/dev/null 2>&1; then
+  echo "Kairos non e' installato: lo installo (serve sudo)."
+  curl -fsSL https://github.com/nicologiuliani6/kairos/releases/latest/download/install.sh | bash
 fi
 
 TMP="$(mktemp -d)"; trap 'rm -rf "${TMP}"' EXIT
@@ -46,9 +54,4 @@ for e in "${EDITORS[@]}"; do
   "${e}" --install-extension "${VSIX}" --force
 done
 
-cat <<MSG
-
-Fatto. L'estensione cerca kairos in /usr/local/bin/kairos e dap.so in
-/usr/local/lib/kairos/dap.so: installa il pacchetto kairos dalle release di
-https://github.com/nicologiuliani6/kairos/releases se non c'e' gia'.
-MSG
+echo "Fatto: kairos in /usr/local/bin/kairos, dap.so in /usr/local/lib/kairos/dap.so."
