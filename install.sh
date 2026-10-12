@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# Installa (o aggiorna) l'estensione Kairos debugger nell'editor dell'utente:
-# scarica il .vsix dell'ultima release (o di quella indicata) e lo installa con
-# la CLI di VS Code, VSCodium o Cursor, quelle presenti.
+# Installs (or updates) the Kairos debugger extension in the user's editor:
+# downloads the .vsix of the latest release (or of the given one) and installs
+# it with the CLI of VS Code, VSCodium or Cursor, whichever are present.
 #
 #   curl -fsSL https://github.com/nicologiuliani6/kairos-vscode-debugger/releases/latest/download/install.sh | bash
-#   ./install.sh                 # ultima release
-#   ./install.sh v0.2.0          # una versione precisa
-#   ./install.sh ./file.vsix     # un .vsix gia' scaricato
+#   ./install.sh                 # latest release
+#   ./install.sh v0.2.0          # a specific version
+#   ./install.sh ./file.vsix     # a .vsix you already downloaded
 #
-# Va eseguito dall'utente, non con sudo: le estensioni stanno nel profilo
-# dell'utente (~/.vscode/extensions). Se Kairos non e' installato, lo installa
-# (questo passo chiede la password di sudo).
+# Run it as your user, not with sudo: extensions live in the user's profile
+# (~/.vscode/extensions). If Kairos is not installed it installs it too (that
+# step asks for the sudo password).
 set -euo pipefail
 
 REPO="nicologiuliani6/kairos-vscode-debugger"
 ARG="${1:-latest}"
 
 if [[ "${EUID}" -eq 0 ]]; then
-  echo "Non usare sudo: l'estensione va nel profilo del tuo utente."; exit 1
+  echo "Do not use sudo: the extension goes into your user's profile."; exit 1
 fi
 
 EDITORS=()
 for c in code codium cursor; do command -v "$c" >/dev/null 2>&1 && EDITORS+=("$c"); done
 if [[ ${#EDITORS[@]} -eq 0 ]]; then
-  echo "Non trovo la CLI di VS Code (code), VSCodium (codium) o Cursor (cursor) nel PATH."; exit 1
+  echo "Cannot find the CLI of VS Code (code), VSCodium (codium) or Cursor (cursor) in PATH."; exit 1
 fi
 
-# Il debugger usa l'app kairos e la sua libreria dap.so: se mancano installa
-# il pacchetto kairos (chiede la password di sudo solo per questo).
+# The debugger uses the kairos app and its dap.so library: if they are missing,
+# install the kairos package (only this step asks for the sudo password).
 if [[ ! -f /usr/local/lib/kairos/dap.so ]] || ! command -v kairos >/dev/null 2>&1; then
-  echo "Kairos non e' installato: lo installo (serve sudo)."
+  echo "Kairos is not installed: installing it (needs sudo)."
   curl -fsSL https://github.com/nicologiuliani6/kairos/releases/latest/download/install.sh | bash
 fi
 
@@ -43,15 +43,15 @@ else
     API="https://api.github.com/repos/${REPO}/releases/tags/${ARG}"
   fi
   URL="$(curl -fsSL "${API}" | grep -o '"browser_download_url": *"[^"]*\.vsix"' | head -1 | sed 's/.*"\(http[^"]*\)"/\1/')"
-  [[ -n "${URL}" ]] || { echo "Nessun .vsix nella release ${ARG}."; exit 1; }
+  [[ -n "${URL}" ]] || { echo "No .vsix in release ${ARG}."; exit 1; }
   VSIX="${TMP}/$(basename "${URL}")"
-  echo "Scarico ${URL}"
+  echo "Downloading ${URL}"
   curl -fsSL -o "${VSIX}" "${URL}"
 fi
 
 for e in "${EDITORS[@]}"; do
-  echo "Installo in ${e}..."
+  echo "Installing into ${e}..."
   "${e}" --install-extension "${VSIX}" --force
 done
 
-echo "Fatto: kairos in /usr/local/bin/kairos, dap.so in /usr/local/lib/kairos/dap.so."
+echo "Done: kairos in /usr/local/bin/kairos, dap.so in /usr/local/lib/kairos/dap.so."
