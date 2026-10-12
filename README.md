@@ -2,6 +2,20 @@
 
 Estensione ufficiale per debug Kairos in VS Code tramite DAP.
 
+## Installazione
+
+Una riga, senza sudo (installa nell'editor del tuo utente: VS Code, VSCodium o
+Cursor, quelli presenti):
+
+```bash
+curl -fsSL https://github.com/nicologiuliani6/kairos-vscode-debugger/releases/latest/download/install.sh | bash
+```
+
+Lo script scarica il `.vsix` dell'ultima release e lo installa con
+`code --install-extension`. Con `./install.sh v0.2.1` installa una versione
+precisa, con `./install.sh file.vsix` un file gia' scaricato. Ogni release
+allega il `.vsix` e `install.sh`.
+
 ## Prerequisiti runtime
 
 Con installazione via `.deb`, i path standard sono:

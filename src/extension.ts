@@ -284,7 +284,7 @@ class KairosDebugConfigurationProvider
         // L'adapter richiede sempre kairosApp.
         if (!config.kairosApp || !this.fileExists(config.kairosApp)) {
             vscode.window.showErrorMessage(
-                `Kairos (v0.2.0): non trovo kairos. Risolto="${config.kairosApp || ''}". ` +
+                `Kairos (v0.2.1): non trovo kairos. Risolto="${config.kairosApp || ''}". ` +
                 `Candidati=${appSearchCandidates.join(' | ')}`
             );
             return undefined;

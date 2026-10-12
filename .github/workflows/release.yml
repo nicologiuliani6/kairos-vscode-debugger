@@ -1,0 +1,41 @@
+# Builds the extension .vsix and attaches it, with install.sh, to a GitHub
+# release. Runs when a tag vX.Y.Z is pushed (or by hand, giving the tag).
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release (e.g. v0.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  vsix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build .vsix
+        run: |
+          npm ci
+          npm run compile
+          npx --yes @vscode/vsce package --allow-missing-repository
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "Kairos debugger $TAG" --generate-notes
+          gh release upload "$TAG" *.vsix install.sh -R "$GITHUB_REPOSITORY" --clobber
