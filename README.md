@@ -6,13 +6,13 @@ Estensione ufficiale per debug Kairos in VS Code tramite DAP.
 
 Con installazione via `.deb`, i path standard sono:
 
-- `KairosApp`: `/usr/local/bin/kairosapp` (symlink a `/opt/kairosapp/KairosApp`)
-- `dap.so`: `/usr/local/lib/kairosapp/dap.so`
+- `kairos`: `/usr/local/bin/kairos` (symlink a `/opt/kairos/kairos`)
+- `dap.so`: `/usr/local/lib/kairos/dap.so`
 
 Verifica rapida:
 
 ```bash
-ls -l /usr/local/bin/kairosapp /opt/kairosapp/KairosApp /usr/local/lib/kairosapp/dap.so
+ls -l /usr/local/bin/kairos /opt/kairos/kairos /usr/local/lib/kairos/dap.so
 ```
 
 ## Sviluppo estensione (solo make)
@@ -47,14 +47,14 @@ Priorita risoluzione:
 1. `launch.json` (`kairosApp`, `kairosLib`)
 2. settings (`kairos.appPath`, `kairos.libPath`) se i path esistono
 3. autodetect da workspace/projectRoot
-4. fallback globali Linux (`/usr/local/bin/kairosapp`, `/opt/kairosapp/KairosApp`, `/usr/local/lib/kairosapp/dap.so`)
+4. fallback globali Linux (`/usr/local/bin/kairos`, `/opt/kairos/kairos`, `/usr/local/lib/kairos/dap.so`; anche i percorsi del vecchio pacchetto `kairosapp`)
 
 Esempio `settings.json`:
 
 ```json
 {
-  "kairos.appPath": "/usr/local/bin/kairosapp",
-  "kairos.libPath": "/usr/local/lib/kairosapp/dap.so"
+  "kairos.appPath": "/usr/local/bin/kairos",
+  "kairos.libPath": "/usr/local/lib/kairos/dap.so"
 }
 ```
 
@@ -69,8 +69,8 @@ Esempio `launch.json`:
       "type": "kairos",
       "request": "launch",
       "program": "${file}",
-      "kairosApp": "/usr/local/bin/kairosapp",
-      "kairosLib": "/usr/local/lib/kairosapp/dap.so"
+      "kairosApp": "/usr/local/bin/kairos",
+      "kairosLib": "/usr/local/lib/kairos/dap.so"
     }
   ]
 }
@@ -78,7 +78,7 @@ Esempio `launch.json`:
 
 ## Troubleshooting veloce
 
-Se vedi "non trovo KairosApp":
+Se vedi "non trovo kairos":
 
 1. verifica i file runtime con il comando `ls -l` sopra
 2. rimuovi path vecchi in `launch.json`/settings

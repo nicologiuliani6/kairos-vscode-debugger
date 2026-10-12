@@ -2,7 +2,7 @@
   "name": "kairos-vscode-debugger",
   "displayName": "Kairos VS Code Debugger",
   "description": "Official VS Code support for Kairos with DAP debugging, reverse execution controls, and built-in language features.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -65,7 +65,7 @@
               },
               "kairosApp": {
                 "type": "string",
-                "description": "Percorso dell'eseguibile KairosApp"
+                "description": "Percorso dell'eseguibile kairos"
               },
               "kairosLib": {
                 "type": "string",
@@ -95,12 +95,12 @@
         },
         "kairos.appPath": {
           "type": "string",
-          "default": "/usr/local/bin/kairosapp",
-          "description": "Percorso di KairosApp. Se impostato, ha priorita rispetto a kairos.projectRoot."
+          "default": "/usr/local/bin/kairos",
+          "description": "Percorso dell'eseguibile kairos. Se impostato, ha priorita rispetto a kairos.projectRoot."
         },
         "kairos.libPath": {
           "type": "string",
-          "default": "/usr/local/lib/kairosapp/dap.so",
+          "default": "/usr/local/lib/kairos/dap.so",
           "description": "Percorso di libvm_dap.so (es. /home/user/kairos/build/libvm_dap.so)"
         }
       }

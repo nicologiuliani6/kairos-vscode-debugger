@@ -38,7 +38,7 @@ log('DAP adapter avviato');
  *  Caricamento libvm_dap.so tramite koffi
  * ====================================================================== */
 
-let LIB_PATH = '/usr/local/lib/kairosapp/dap.so';
+let LIB_PATH = '/usr/local/lib/kairos/dap.so';
 
 let lib: any;
 let vm_debug_new:                   ()                                    => any;

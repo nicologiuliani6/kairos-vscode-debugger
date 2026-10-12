@@ -151,6 +151,8 @@ class KairosDebugConfigurationProvider
 
     private appCandidatesFromRoot(root: string): string[] {
         return [
+            path.join(root, 'build', 'dist', 'kairos'),
+            // nomi della vecchia app (KairosApp / kairosapp)
             path.join(root, 'packaging', 'linux', 'kairosapp'),
             path.join(root, 'build', 'dist', 'KairosApp'),
             path.join(root, 'build', 'KairosApp'),
@@ -172,6 +174,9 @@ class KairosDebugConfigurationProvider
 
     private appGlobalCandidates(): string[] {
         return [
+            '/usr/local/bin/kairos',
+            '/opt/kairos/kairos',
+            // vecchio pacchetto kairosapp
             '/usr/local/bin/kairosapp',
             '/opt/kairosapp/KairosApp',
         ];
@@ -179,6 +184,7 @@ class KairosDebugConfigurationProvider
 
     private libGlobalCandidates(): string[] {
         return [
+            '/usr/local/lib/kairos/dap.so',
             '/usr/local/lib/kairosapp/dap.so',
         ];
     }
@@ -278,7 +284,7 @@ class KairosDebugConfigurationProvider
         // L'adapter richiede sempre kairosApp.
         if (!config.kairosApp || !this.fileExists(config.kairosApp)) {
             vscode.window.showErrorMessage(
-                `Kairos (v0.1.1): non trovo KairosApp. Risolto="${config.kairosApp || ''}". ` +
+                `Kairos (v0.2.0): non trovo kairos. Risolto="${config.kairosApp || ''}". ` +
                 `Candidati=${appSearchCandidates.join(' | ')}`
             );
             return undefined;
